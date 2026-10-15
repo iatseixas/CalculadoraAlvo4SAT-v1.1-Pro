@@ -2,6 +2,7 @@
 const COLORS=['yellow','green','red','blue'], LIMIT=24, MAX=120, PASS=72;
 const STORAGE='calculadora-alvo4sat-pro-v1.1';
 let entries=[];
+let resultModalSignature=null;
 const el=id=>document.getElementById(id);
 function scoreFromPoint(pos){const r=Math.hypot(pos.x-50,(pos.y-50)*10/7);return r<=20?5:r<=31?4:r<=42?3:0;}
 function summary(items=entries){const shots=items.filter(x=>x.type==='shot');const penalties=items.filter(x=>x.type==='penalty').length;const points=shots.reduce((n,s)=>n+s.p,0)-penalties*5;return {n:shots.length,penalties,points,percent:points/MAX*100,result:shots.length===LIMIT?(points>=PASS?'APTO':'INAPTO'):null};}
@@ -22,12 +23,24 @@ function recordPenalty(){if(!summary().n){toast('Lance um tiro antes de registra
 function undo(){if(!entries.length){toast('Não há lançamento para desfazer.');return;}entries.pop();save();render();}
 function clearProof(){entries=[];try{localStorage.removeItem(STORAGE);}catch{}render();}
 function render(){const s=summary();el('points').textContent=s.points+'/120';el('percent').textContent=Number(s.percent.toFixed(1))+'%';el('shots').textContent=s.n+'/24';el('penalties').textContent=s.penalties;const result=el('result');result.className='result'+(s.result?(s.result==='APTO'?' ok':' fail'):'');result.textContent=s.result||'EM LANÇAMENTO';const small=document.createElement('small');small.textContent=s.result?s.points+' pontos · '+Number(s.percent.toFixed(1))+'%':'Faltam '+(LIMIT-s.n)+' tiros para obter o resultado.';result.appendChild(small);
+ syncResultModal(s);
  document.querySelectorAll('.hit').forEach(x=>x.remove());COLORS.forEach(c=>{const shots=entries.filter(x=>x.type==='shot'&&x.c===c);document.querySelector('[data-score-color="'+c+'"]').textContent=shots.reduce((n,x)=>n+x.p,0);document.querySelectorAll('[data-point-color="'+c+'"]').forEach(b=>b.querySelector('.point-count').textContent=shots.filter(x=>x.p===Number(b.dataset.pointValue)).length);const area=document.querySelector('.zone.'+c+' .zone-impact-area');shots.forEach(x=>{const mark=document.createElement('span');mark.className='hit';mark.style.left=x.x+'%';mark.style.top=x.y+'%';area.appendChild(mark);});});
 }
 el('target').addEventListener('click',event=>{const button=event.target.closest('[data-point-value]');if(button){recordShot(button.dataset.pointColor,null,Number(button.dataset.pointValue));return;}const area=event.target.closest('.zone-impact-area');if(!area)return;const r=area.getBoundingClientRect();recordShot(area.closest('[data-c]').dataset.c,{x:Math.max(0,Math.min(100,(event.clientX-r.left)/r.width*100)),y:Math.max(0,Math.min(100,(event.clientY-r.top)/r.height*100))});});
 el('outside').onclick=()=>recordShot('white');el('penalty').onclick=recordPenalty;el('undo').onclick=undo;
 el('clear').onclick=()=>el('clearDialog').showModal();el('cancelClear').onclick=()=>el('clearDialog').close();el('confirmClear').onclick=()=>{clearProof();el('clearDialog').close();};
 el('developer').onclick=()=>el('developerDialog').showModal();el('closeDeveloper').onclick=()=>el('developerDialog').close();
+function syncResultModal(s){
+ const dialog=el('resultDialog');
+ if(!s.result){resultModalSignature=null;if(dialog.open)dialog.close();return;}
+ const signature=s.n+':'+s.points+':'+s.penalties;
+ if(signature!==resultModalSignature){
+  resultModalSignature=signature;
+  if(!dialog.open)dialog.showModal();
+ }
+}
+el('reviewResult').onclick=()=>el('resultDialog').close();
+el('newProofResult').onclick=()=>{el('resultDialog').close();el('clearDialog').showModal();};
 load();render();
 if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
 
