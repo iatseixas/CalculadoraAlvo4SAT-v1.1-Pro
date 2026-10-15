@@ -30,3 +30,18 @@ el('clear').onclick=()=>el('clearDialog').showModal();el('cancelClear').onclick=
 el('developer').onclick=()=>el('developerDialog').showModal();el('closeDeveloper').onclick=()=>el('developerDialog').close();
 load();render();
 if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+
+/* Mantém a geometria 7:10 das áreas de impacto dentro da altura disponível. */
+function fitTargetToScreen(){
+ const space=document.querySelector('.target-space');
+ if(!space)return;
+ const width=Math.max(0,Math.min(440,space.clientWidth,(space.clientHeight-88)*7/10+12));
+ el('target').style.setProperty('--target-width',width+'px');
+}
+if(typeof ResizeObserver!=='undefined'){
+ const targetLayoutObserver=new ResizeObserver(fitTargetToScreen);
+ targetLayoutObserver.observe(document.querySelector('.target-space'));
+}
+window.addEventListener('resize',fitTargetToScreen);
+if(window.visualViewport)window.visualViewport.addEventListener('resize',fitTargetToScreen);
+fitTargetToScreen();
