@@ -22,9 +22,10 @@ function recordShot(color,pos,manualPoints){if(summary().n>=LIMIT){toast('Os 24 
 function recordPenalty(){if(!summary().n){toast('Lance um tiro antes de registrar uma penalidade.');return;}entries.push({type:'penalty'});save();render();}
 function undo(){if(!entries.length){toast('Não há lançamento para desfazer.');return;}entries.pop();save();render();}
 function clearProof(){entries=[];try{localStorage.removeItem(STORAGE);}catch{}render();}
+function penalizedShots(items=entries){const marked=new Set();let lastShot=null;for(const entry of items){if(entry.type==='shot')lastShot=entry;else if(entry.type==='penalty'&&lastShot)marked.add(lastShot);}return marked;}
 function render(){const s=summary();el('points').textContent=s.points+'/120';el('percent').textContent=Number(s.percent.toFixed(1))+'%';el('shots').textContent=s.n+'/24';el('penalties').textContent=s.penalties;const result=el('result');result.className='result'+(s.result?(s.result==='APTO'?' ok':' fail'):'');result.textContent=s.result||'EM LANÇAMENTO';const small=document.createElement('small');small.textContent=s.result?s.points+' pontos · '+Number(s.percent.toFixed(1))+'%':'Faltam '+(LIMIT-s.n)+' tiros para obter o resultado.';result.appendChild(small);
  syncResultModal(s);
- document.querySelectorAll('.hit').forEach(x=>x.remove());COLORS.forEach(c=>{const shots=entries.filter(x=>x.type==='shot'&&x.c===c);document.querySelector('[data-score-color="'+c+'"]').textContent=shots.reduce((n,x)=>n+x.p,0);document.querySelectorAll('[data-point-color="'+c+'"]').forEach(b=>b.querySelector('.point-count').textContent=shots.filter(x=>x.p===Number(b.dataset.pointValue)).length);const area=document.querySelector('.zone.'+c+' .zone-impact-area');shots.forEach(x=>{const mark=document.createElement('span');mark.className='hit';mark.style.left=x.x+'%';mark.style.top=x.y+'%';area.appendChild(mark);});});
+ const penalized=penalizedShots();document.querySelectorAll('.hit').forEach(x=>x.remove());COLORS.forEach(c=>{const shots=entries.filter(x=>x.type==='shot'&&x.c===c);document.querySelector('[data-score-color="'+c+'"]').textContent=shots.reduce((n,x)=>n+x.p,0);document.querySelectorAll('[data-point-color="'+c+'"]').forEach(b=>b.querySelector('.point-count').textContent=shots.filter(x=>x.p===Number(b.dataset.pointValue)).length);const area=document.querySelector('.zone.'+c+' .zone-impact-area');shots.forEach(x=>{const mark=document.createElement('span');mark.className='hit'+(penalized.has(x)?' penalized':'');mark.setAttribute('role','img');mark.setAttribute('aria-label',x.p+' pontos'+(penalized.has(x)?' · disparo penalizado':''));mark.style.left=x.x+'%';mark.style.top=x.y+'%';area.appendChild(mark);});});
 }
 el('target').addEventListener('click',event=>{const button=event.target.closest('[data-point-value]');if(button){recordShot(button.dataset.pointColor,null,Number(button.dataset.pointValue));return;}const area=event.target.closest('.zone-impact-area');if(!area)return;const r=area.getBoundingClientRect();recordShot(area.closest('[data-c]').dataset.c,{x:Math.max(0,Math.min(100,(event.clientX-r.left)/r.width*100)),y:Math.max(0,Math.min(100,(event.clientY-r.top)/r.height*100))});});
 el('outside').onclick=()=>recordShot('white');el('penalty').onclick=recordPenalty;el('undo').onclick=undo;
@@ -48,7 +49,10 @@ if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.ser
 function fitTargetToScreen(){
  const space=document.querySelector('.target-space');
  if(!space)return;
- const width=Math.max(0,Math.min(440,space.clientWidth,(space.clientHeight-88)*7/10+12));
+ const target=el('target');
+ const border=parseFloat(getComputedStyle(target).borderTopWidth)*2;
+ const controls=[...target.querySelectorAll('.zone-point-buttons')].slice(0,2).reduce((sum,row)=>sum+row.getBoundingClientRect().height,0);
+ const width=Math.max(0,Math.min(440,space.clientWidth,(space.clientHeight-border-controls)*7/10+border));
  el('target').style.setProperty('--target-width',width+'px');
 }
 if(typeof ResizeObserver!=='undefined'){
