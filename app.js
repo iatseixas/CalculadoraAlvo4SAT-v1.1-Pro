@@ -26,7 +26,7 @@ function recordShot(color,pos,manualPoints){if(summary().n>=LIMIT){toast('Os 24 
 }
 function recordPenalty(){if(!summary().n){toast('Lance um tiro antes de registrar uma penalidade.');return;}entries.push({type:'penalty'});save();render();}
 function undo(){if(!entries.length){toast('Não há lançamento para desfazer.');return;}entries.pop();save();render();}
-function clearProof(){entries=[];try{localStorage.removeItem(STORAGE);}catch{}render();}
+function clearProof(){if(typeof calcReportPhoto!=='undefined')calcReportPhoto.clear();entries=[];try{localStorage.removeItem(STORAGE);}catch{}render();}
 function penalizedShots(items=entries){const marked=new Set();let lastShot=null;for(const entry of items){if(entry.type==='shot')lastShot=entry;else if(entry.type==='penalty'&&lastShot)marked.add(lastShot);}return marked;}
 function render(){const s=summary();el('points').textContent=s.points+'/120';el('percent').textContent=Number(s.percent.toFixed(1))+'%';el('shots').textContent=s.n+'/24';el('penalties').textContent=s.penalties;const result=el('result');result.className='result'+(s.result?(s.result==='APTO'?' ok':' fail'):'');result.textContent=s.result||'EM LANÇAMENTO';const small=document.createElement('small');small.textContent=s.result?s.points+' pontos · '+Number(s.percent.toFixed(1))+'%':'Faltam '+(LIMIT-s.n)+' tiros para obter o resultado.';result.appendChild(small);
  syncResultModal(s);
@@ -70,3 +70,15 @@ if(typeof ResizeObserver!=='undefined'){
 window.addEventListener('resize',fitTargetToScreen);
 if(window.visualViewport)window.visualViewport.addEventListener('resize',fitTargetToScreen);
 fitTargetToScreen();
+// Laudo editável com foto opcional, disponível no resultado final.
+const calcReportPhoto=SATReport.photoControl({button:el('reportPhoto'),notify:toast,key:()=>JSON.stringify(entries)});
+el('openReport').onclick=()=>el('reportDialog').showModal();
+el('closeReport').onclick=()=>el('reportDialog').close();
+el('reportNumber').oninput=function(){this.value=this.value.replace(/\D/g,'').slice(0,4)};
+el('downloadReport').onclick=()=>{
+ const number=el('reportNumber').value.trim();
+ if(!/^\d{1,4}$/.test(number)){toast('Informe o número do laudo.');el('reportNumber').focus();return}
+ if(calcReportPhoto.isBusy()){toast('Aguarde o processamento da foto.');return}
+ const s=summary(),date=new Date(),year=date.getFullYear(),day=String(date.getDate()).padStart(2,'0'),month=String(date.getMonth()+1).padStart(2,'0');
+ try{const bytes=SATReport.build({number:number+'/'+String(year).slice(-2),date:day+'/'+month+'/'+year,emission:day+'/'+month+'/'+year,points:s.points,percent:Number(s.percent.toFixed(1)),approved:null,photo:calcReportPhoto.get()});SATReport.save(bytes,'LAUDO '+number+'-'+String(year).slice(-2)+' ALVO4SAT.docx',toast)}catch(error){toast('Não foi possível gerar o laudo DOCX.')}
+};
