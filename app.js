@@ -2,8 +2,9 @@
 const COLORS=['yellow','green','red','blue'], LIMIT=24, MAX=120, PASS=72;
 // Amplia a geometria visível, preservando as coordenadas e pontuações já salvas.
 const TARGET_SCALE=96/84;
-const displayCoordinate=value=>Math.max(1,Math.min(99,50+(value-50)*TARGET_SCALE));
-const canonicalCoordinate=value=>50+(value-50)/TARGET_SCALE;
+const TARGET_HEIGHT_SCALE=1.05;
+const displayCoordinate=(value,scale=TARGET_SCALE)=>Math.max(1,Math.min(99,50+(value-50)*scale));
+const canonicalCoordinate=(value,scale=TARGET_SCALE)=>50+(value-50)/scale;
 const STORAGE='calculadora-alvo4sat-pro-v1.1';
 let entries=[];
 let resultModalSignature=null;
@@ -15,7 +16,7 @@ function load(){try{const saved=JSON.parse(localStorage.getItem(STORAGE)||'[]');
 function save(){try{localStorage.setItem(STORAGE,JSON.stringify(entries));}catch{}}
 function toast(message){el('toast').textContent=message;el('toast').hidden=false;clearTimeout(toast.id);toast.id=setTimeout(()=>el('toast').hidden=true,2600);}
 function randomImpactPosition(color,points){const area=document.querySelector('.zone.'+color+' .zone-impact-area');const rect=area.getBoundingClientRect();const width=rect.width||190,height=rect.height||width*10/7;const separation=(window.innerWidth<500?13:16)+3;const used=entries.filter(x=>x.type==='shot'&&x.c===color);let best=null,bestDistance=-1;
- function consider(x,y){if(x<6||x>94||y<7||y>85||(x>70&&y<18)||scoreFromPoint({x,y})!==points)return null;const distance=used.length?Math.min(...used.map(p=>Math.hypot((x-p.x)*width/100,(y-p.y)*height/100)*TARGET_SCALE)):Infinity;if(distance>bestDistance){best={x,y};bestDistance=distance;}return distance>=separation?{x,y}:null;}
+ function consider(x,y){if(x<6||x>94||y<7||y>85||(x>70&&y<18)||scoreFromPoint({x,y})!==points)return null;const distance=used.length?Math.min(...used.map(p=>Math.hypot((x-p.x)*width/100,(y-p.y)*height/100*TARGET_HEIGHT_SCALE)*TARGET_SCALE)):Infinity;if(distance>bestDistance){best={x,y};bestDistance=distance;}return distance>=separation?{x,y}:null;}
  for(let i=0;i<800;i++){let x,y;if(points){const band=points===5?[2,17]:points===4?[23,28]:[34,39],r=Math.sqrt(band[0]**2+Math.random()*(band[1]**2-band[0]**2)),a=Math.random()*Math.PI*2;x=50+Math.cos(a)*r;y=50+Math.sin(a)*r*7/10;}else{x=6+Math.random()*88;y=7+Math.random()*78;}const candidate=consider(x,y);if(candidate)return candidate;}
  for(let y=7;y<=85;y+=1.5)for(let x=6;x<=94;x+=1.5){const candidate=consider(x,y);if(candidate)return candidate;}
  return bestDistance>=separation?best:null;
@@ -29,9 +30,9 @@ function clearProof(){entries=[];try{localStorage.removeItem(STORAGE);}catch{}re
 function penalizedShots(items=entries){const marked=new Set();let lastShot=null;for(const entry of items){if(entry.type==='shot')lastShot=entry;else if(entry.type==='penalty'&&lastShot)marked.add(lastShot);}return marked;}
 function render(){const s=summary();el('points').textContent=s.points+'/120';el('percent').textContent=Number(s.percent.toFixed(1))+'%';el('shots').textContent=s.n+'/24';el('penalties').textContent=s.penalties;const result=el('result');result.className='result'+(s.result?(s.result==='APTO'?' ok':' fail'):'');result.textContent=s.result||'EM LANÇAMENTO';const small=document.createElement('small');small.textContent=s.result?s.points+' pontos · '+Number(s.percent.toFixed(1))+'%':'Faltam '+(LIMIT-s.n)+' tiros para obter o resultado.';result.appendChild(small);
  syncResultModal(s);
- const penalized=penalizedShots();document.querySelectorAll('.hit').forEach(x=>x.remove());COLORS.forEach(c=>{const shots=entries.filter(x=>x.type==='shot'&&x.c===c);document.querySelector('[data-score-color="'+c+'"]').textContent=shots.reduce((n,x)=>n+x.p,0);document.querySelectorAll('[data-point-color="'+c+'"]').forEach(b=>b.querySelector('.point-count').textContent=shots.filter(x=>x.p===Number(b.dataset.pointValue)).length);const area=document.querySelector('.zone.'+c+' .zone-impact-area');shots.forEach(x=>{const mark=document.createElement('span');mark.className='hit'+(penalized.has(x)?' penalized':'');mark.setAttribute('role','img');mark.setAttribute('aria-label',x.p+' pontos'+(penalized.has(x)?' · disparo penalizado':''));mark.style.left=displayCoordinate(x.x)+'%';mark.style.top=displayCoordinate(x.y)+'%';area.appendChild(mark);});});
+ const penalized=penalizedShots();document.querySelectorAll('.hit').forEach(x=>x.remove());COLORS.forEach(c=>{const shots=entries.filter(x=>x.type==='shot'&&x.c===c);document.querySelector('[data-score-color="'+c+'"]').textContent=shots.reduce((n,x)=>n+x.p,0);document.querySelectorAll('[data-point-color="'+c+'"]').forEach(b=>b.querySelector('.point-count').textContent=shots.filter(x=>x.p===Number(b.dataset.pointValue)).length);const area=document.querySelector('.zone.'+c+' .zone-impact-area');shots.forEach(x=>{const mark=document.createElement('span');mark.className='hit'+(penalized.has(x)?' penalized':'');mark.setAttribute('role','img');mark.setAttribute('aria-label',x.p+' pontos'+(penalized.has(x)?' · disparo penalizado':''));mark.style.left=displayCoordinate(x.x)+'%';mark.style.top=displayCoordinate(x.y,TARGET_SCALE*TARGET_HEIGHT_SCALE)+'%';area.appendChild(mark);});});
 }
-el('target').addEventListener('click',event=>{const button=event.target.closest('[data-point-value]');if(button){recordShot(button.dataset.pointColor,null,Number(button.dataset.pointValue));return;}const area=event.target.closest('.zone-impact-area');if(!area)return;const r=area.getBoundingClientRect();recordShot(area.closest('[data-c]').dataset.c,{x:canonicalCoordinate(Math.max(0,Math.min(100,(event.clientX-r.left)/r.width*100))),y:canonicalCoordinate(Math.max(0,Math.min(100,(event.clientY-r.top)/r.height*100)))});});
+el('target').addEventListener('click',event=>{const button=event.target.closest('[data-point-value]');if(button){recordShot(button.dataset.pointColor,null,Number(button.dataset.pointValue));return;}const area=event.target.closest('.zone-impact-area');if(!area)return;const r=area.getBoundingClientRect();recordShot(area.closest('[data-c]').dataset.c,{x:canonicalCoordinate(Math.max(0,Math.min(100,(event.clientX-r.left)/r.width*100))),y:canonicalCoordinate(Math.max(0,Math.min(100,(event.clientY-r.top)/r.height*100)),TARGET_SCALE*TARGET_HEIGHT_SCALE)});});
 el('outside').onclick=()=>recordShot('white');el('penalty').onclick=recordPenalty;el('undo').onclick=undo;
 el('clear').onclick=()=>el('clearDialog').showModal();el('cancelClear').onclick=()=>el('clearDialog').close();el('confirmClear').onclick=()=>{clearProof();el('clearDialog').close();};
 el('developer').onclick=()=>el('developerDialog').showModal();el('closeDeveloper').onclick=()=>el('developerDialog').close();
@@ -49,13 +50,13 @@ el('newProofResult').onclick=()=>{el('resultDialog').close();el('clearDialog').s
 load();render();
 if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
 
-/* O fundo e os botões ocupam toda a largura; a área de impacto mantém 7:10.
+/* O fundo e os botões ocupam toda a largura; a área de impacto permite círculos 5% maiores.
    Assim círculos, coordenadas salvas e cálculo da pontuação usam a mesma geometria. */
 function fitTargetToScreen(){
  const target=el('target');
  if(!target)return;
  target.querySelectorAll('.zone-impact-space').forEach(space=>{
-  const width=Math.max(0,Math.min(space.clientWidth,space.clientHeight*7/10));
+  const width=Math.max(0,Math.min(space.clientWidth,space.clientHeight*7/10*TARGET_HEIGHT_SCALE));
   space.style.setProperty('--impact-width',width+'px');
  });
 }
