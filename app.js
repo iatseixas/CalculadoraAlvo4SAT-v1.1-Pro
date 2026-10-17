@@ -1,8 +1,8 @@
 'use strict';
 const COLORS=['yellow','green','red','blue'], LIMIT=24, MAX=120, PASS=72;
-// Amplia a geometria visível, preservando as coordenadas e pontuações já salvas.
-const TARGET_SCALE=96/84;
-const TARGET_HEIGHT_SCALE=1.05;
+// Plano de impacto igual ao Alvo4SATPro; mantém os registros existentes.
+const TARGET_SCALE=1;
+const TARGET_HEIGHT_SCALE=1;
 const displayCoordinate=(value,scale=TARGET_SCALE)=>Math.max(1,Math.min(99,50+(value-50)*scale));
 const canonicalCoordinate=(value,scale=TARGET_SCALE)=>50+(value-50)/scale;
 const STORAGE='calculadora-alvo4sat-pro-v1.1';
@@ -50,14 +50,17 @@ el('newProofResult').onclick=()=>{el('resultDialog').close();el('clearDialog').s
 load();render();
 if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
 
-/* O fundo e os botões ocupam toda a largura; a área de impacto permite círculos 5% maiores.
-   Assim círculos, coordenadas salvas e cálculo da pontuação usam a mesma geometria. */
+/* Mesma largura, altura, borda e faixas de pontuação do Alvo4SATPro. */
 function fitTargetToScreen(){
- const target=el('target');
- if(!target)return;
- target.querySelectorAll('.zone-impact-space').forEach(space=>{
-  const width=Math.max(0,Math.min(space.clientWidth,space.clientHeight*7/10*TARGET_HEIGHT_SCALE));
-  space.style.setProperty('--impact-width',width+'px');
+ const target=el('target'),space=document.querySelector('.target-space');
+ if(!target||!space)return;
+ const border=parseFloat(getComputedStyle(target).borderLeftWidth)*2;
+ const previousLimit=innerHeight<=760?330:(innerWidth<=430?348:390);
+ const previousWidth=Math.min(space.clientWidth,previousLimit);
+ target.style.setProperty('--target-height',(Math.max(0,previousWidth-border)*10/7+88+border)+'px');
+ target.querySelectorAll('.zone-impact-space').forEach(area=>{
+  const width=Math.max(0,Math.min(area.clientWidth,area.clientHeight*7/10));
+  area.style.setProperty('--impact-width',width+'px');
  });
 }
 if(typeof ResizeObserver!=='undefined'){
