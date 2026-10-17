@@ -1,4 +1,4 @@
-const CACHE='calculadora-alvo4sat-v1.1-9';
+const CACHE='calculadora-alvo4sat-v1.1-10';
 const FILES=['./','./index.html','./app.js','./app.js?v=8','./manifest.webmanifest','./icon.svg','./apple-touch-icon.png','./favicon.ico','./favicon-16.png','./favicon-32.png','./icons/icon-192.png','./icons/icon-512.png','./icons/icon-maskable-192.png','./icons/icon-maskable-512.png'];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(FILES)).then(()=>self.skipWaiting()));});
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('calculadora-alvo4sat-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});
