@@ -45,15 +45,15 @@ el('newProofResult').onclick=()=>{el('resultDialog').close();el('clearDialog').s
 load();render();
 if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
 
-/* Mantém a geometria 7:10 das áreas de impacto dentro da altura disponível. */
+/* O fundo e os botões ocupam toda a largura; a área de impacto mantém 7:10.
+   Assim círculos, coordenadas salvas e cálculo da pontuação usam a mesma geometria. */
 function fitTargetToScreen(){
- const space=document.querySelector('.target-space');
- if(!space)return;
  const target=el('target');
- const border=parseFloat(getComputedStyle(target).borderTopWidth)*2;
- const controls=[...target.querySelectorAll('.zone-point-buttons')].slice(0,2).reduce((sum,row)=>sum+row.getBoundingClientRect().height,0);
- const width=Math.max(0,Math.min(440,space.clientWidth,(space.clientHeight-border-controls)*7/10+border));
- el('target').style.setProperty('--target-width',width+'px');
+ if(!target)return;
+ target.querySelectorAll('.zone-impact-space').forEach(space=>{
+  const width=Math.max(0,Math.min(space.clientWidth,space.clientHeight*7/10));
+  space.style.setProperty('--impact-width',width+'px');
+ });
 }
 if(typeof ResizeObserver!=='undefined'){
  const targetLayoutObserver=new ResizeObserver(fitTargetToScreen);
