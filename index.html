@@ -44,7 +44,9 @@ dialog{max-height:calc(100dvh - 32px);overflow:auto}
 .test-rule-records p{margin:5px 0}
 .app-info-meta .app-developer-info{grid-column:1/-1}
 
-.developer-presentation a{color:#a5ef2d;text-decoration:underline;text-underline-offset:3px;overflow-wrap:anywhere}.developer-app-links{margin:12px 0;padding-left:22px}.developer-app-links li{margin:8px 0;line-height:1.5}.developer-presentation a:focus-visible{outline:2px solid #a5ef2d;outline-offset:3px}
+.developer-presentation a{color:#a5ef2d;text-decoration:underline;text-underline-offset:3px;overflow-wrap:anywhere}.developer-app-links{margin:12px 0;padding-left:22px}.developer-app-links li{margin:8px 0;line-height:1.5}.developer-presentation a:focus{outline:none;box-shadow:none}
+.developer-presentation a:focus-visible{text-decoration-thickness:3px;text-underline-offset:4px}
+@media(hover:none) and (pointer:coarse){.developer-presentation a:focus-visible{text-decoration-thickness:auto;text-underline-offset:auto}}
 
 /* Mesmas medidas do alvo do Alvo4SATPro. */
 html{height:auto;min-height:100%;overflow:auto}
