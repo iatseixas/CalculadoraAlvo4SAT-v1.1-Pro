@@ -1,0 +1,2 @@
+/* Preferências e provas da ACAPS não alteram a família SAT. */
+(function(){const prefix='acaps:';const api={getItem:key=>localStorage.getItem(prefix+key),setItem:(key,value)=>localStorage.setItem(prefix+key,String(value)),removeItem:key=>localStorage.removeItem(prefix+key)};window.ACAPSStorage=new Proxy(api,{get:(target,key)=>key in target?target[key]:localStorage.getItem(prefix+String(key)),set:(target,key,value)=>{localStorage.setItem(prefix+String(key),String(value));return true}})})();

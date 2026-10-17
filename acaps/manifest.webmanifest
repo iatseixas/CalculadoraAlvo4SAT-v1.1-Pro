@@ -1,0 +1,38 @@
+{
+  "name": "Calculadora Alvo4ACAPS-Pro",
+  "short_name": "Calculadora Alvo4ACAPS-Pro",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#101216",
+  "theme_color": "#101216",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "icons/icon-192.png?v=4",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png?v=4",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-maskable-192.png?v=4",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icons/icon-maskable-512.png?v=4",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "description": "Aplicativo ACAPS com pontuação e súmula DOCX editável com foto opcional.",
+  "id": "./"
+}
